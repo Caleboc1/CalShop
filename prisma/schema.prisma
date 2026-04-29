@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  name         String?
+  balance      Float         @default(0)
+  apiKey       String?       @unique @default(cuid())
+  role         Role          @default(USER)
+  referralCode String?       @unique
+  referredBy   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  transactions Transaction[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  icon        String?
+  description String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+}
+
+model Product {
+  id             String      @id @default(cuid())
+  categoryId     String
+  name           String
+  description    String?     @db.Text
+  price          Float       // NGN — what you charge users
+  upstreamId     String?     // Acctshop product ID
+  upstreamPrice  Float?      // their price in USD
+  stockCount     Int         @default(0)
+  minOrder       Int         @default(1)
+  maxOrder       Int         @default(100)
+  isActive       Boolean     @default(true)
+  featured       Boolean     @default(false)
+  replaceDays    Int         @default(1) // replacement window in days
+  tags           String[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  category       Category    @relation(fields: [categoryId], references: [id])
+  orders         Order[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  productId       String
+  quantity        Int         @default(1)
+  charge          Float
+  status          OrderStatus @default(PENDING)
+  credentials     String[]    // the actual accounts delivered e.g. "user|pass"
+  upstreamTransId String?     // Acctshop trans_id
+  replacedAt      DateTime?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  user            User        @relation(fields: [userId], references: [id])
+  product         Product     @relation(fields: [productId], references: [id])
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  amount      Float
+  type        TransactionType
+  method      String?
+  reference   String?           @unique
+  status      TransactionStatus @default(PENDING)
+  description String?
+  createdAt   DateTime          @default(now())
+  user        User              @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  REPLACED
+  REFUNDED
+  FAILED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
