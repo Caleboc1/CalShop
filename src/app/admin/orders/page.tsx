@@ -1,8 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
 
+type Order = {
+  id: string;
+  user: { email: string };
+  product: { name: string };
+  quantity: number;
+  charge: number;
+  status: "COMPLETED" | "PENDING";
+  credentials?: string[];
+  createdAt: string;
+};
+
 export default async function AdminOrdersPage() {
-  const orders = await prisma.order.findMany({
+  const orders: Order[] = await prisma.order.findMany({
     take: 100, orderBy: { createdAt: "desc" },
     include: { user: { select: { email: true } }, product: true },
   });

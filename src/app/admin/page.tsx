@@ -9,7 +9,17 @@ export default async function AdminPage() {
     prisma.product.count({ where: { isActive: true } }),
   ]);
 
-  const recentOrders = await prisma.order.findMany({
+  type RecentOrder = {
+    id: string;
+    user: { email: string };
+    product: { name: string };
+    quantity: number;
+    charge: number;
+    status: string;
+    createdAt: string;
+  };
+
+  const recentOrders: RecentOrder[] = await prisma.order.findMany({
     take: 10, orderBy: { createdAt: "desc" },
     include: { user: { select: { email: true } }, product: true },
   });

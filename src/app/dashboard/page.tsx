@@ -18,7 +18,7 @@ export default async function DashboardPage() {
       include: { product: { include: { category: true } } },
       orderBy: { createdAt: "desc" },
     }),
-  ]);
+  ] as const);
 
   const stats = [
     { label: "Wallet Balance", value: formatNGN(user?.balance ?? 0), icon: Wallet, color: "text-green-600", bg: "bg-green-100", href: "/dashboard/wallet" },
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {recentOrders.map(o => (
+                {recentOrders.map((o: { id: string; product: { name: string; category?: { name: string } }; quantity: number; charge: number; status: string; createdAt: string }) => (
                   <tr key={o.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900 text-sm truncate max-w-45">{o.product.name}</div>

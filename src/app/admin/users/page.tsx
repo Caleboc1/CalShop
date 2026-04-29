@@ -1,8 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
 
+type User = {
+  id: string;
+  name: string | null;
+  email: string;
+  balance: number;
+  role: "ADMIN" | "USER";
+  createdAt: string;
+  _count: { orders: number };
+};
+
 export default async function AdminUsersPage() {
-  const users = await prisma.user.findMany({
+  const users: User[] = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true, email: true, balance: true, role: true, createdAt: true, _count: { select: { orders: true } } },
   });
