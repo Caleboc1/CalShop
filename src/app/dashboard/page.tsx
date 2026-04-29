@@ -84,7 +84,7 @@ export default async function DashboardPage() {
                 {recentOrders.map(o => (
                   <tr key={o.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900 text-sm truncate max-w-[180px]">{o.product.name}</div>
+                      <div className="font-medium text-gray-900 text-sm truncate max-w-45">{o.product.name}</div>
                       <div className="text-xs text-gray-400">{o.product.category?.name}</div>
                     </td>
                     <td className="px-4 py-3 text-gray-600 font-mono text-xs">{o.quantity}</td>

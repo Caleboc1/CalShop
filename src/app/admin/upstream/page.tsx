@@ -113,9 +113,12 @@ export default function UpstreamPage() {
               </thead>
               <tbody>
                 {filtered.map((p: any, i: number) => {
-                  const theirPrice = parseFloat(p.price || p.cost || "1");
-                  const yourPrice = Math.ceil(theirPrice * USD_TO_NGN * MARKUP);
-                  const profit = yourPrice - Math.ceil(theirPrice * USD_TO_NGN);
+                  // Convert from cents to dollars for display
+                  const theirPriceInCents = parseFloat(p.price || "1");
+                  const theirPriceInUSD = theirPriceInCents / 100;
+                  const yourPrice = Math.ceil(theirPriceInUSD * USD_TO_NGN * MARKUP);
+                  const profit = yourPrice - Math.ceil(theirPriceInUSD * USD_TO_NGN);
+
                   return (
                     <tr key={p.id || i} className="border-t border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-3 text-gray-400 font-mono text-xs">{p.id}</td>
@@ -123,10 +126,18 @@ export default function UpstreamPage() {
                         <div className="text-gray-900 font-medium text-xs leading-snug">{p.name || p.title}</div>
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{p.category_name || p.category || "—"}</td>
-                      <td className="px-4 py-3 text-red-500 font-mono text-xs">${theirPrice.toFixed(4)}</td>
-                      <td className="px-4 py-3 text-green-600 font-mono text-xs font-bold">{formatNGN(yourPrice)}</td>
-                      <td className="px-4 py-3 text-violet-600 font-mono text-xs">{formatNGN(profit)}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{p.stock || p.quantity || "—"}</td>
+                      <td className="px-4 py-3 text-red-500 font-mono text-xs">
+                        ${theirPriceInUSD.toFixed(2)}  {/* Now shows $6.90 instead of $690 */}
+                      </td>
+                      <td className="px-4 py-3 text-green-600 font-mono text-xs font-bold">
+                        {formatNGN(yourPrice)}
+                      </td>
+                      <td className="px-4 py-3 text-violet-600 font-mono text-xs">
+                        {formatNGN(profit)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {p.amount || p.stock || p.quantity || "—"}
+                      </td>
                     </tr>
                   );
                 })}

@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -27,12 +26,16 @@ model Category {
   id          String    @id @default(cuid())
   name        String
   slug        String    @unique
+  sortOrder   Int       @default(0)
+  upstreamId  String?   @map("upstream_id")  // Store Acctshop category ID
   icon        String?
   description String?
-  sortOrder   Int       @default(0)
   isActive    Boolean   @default(true)
   products    Product[]
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("categories")
 }
 
 model Product {

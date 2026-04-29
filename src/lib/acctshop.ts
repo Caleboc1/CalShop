@@ -1,46 +1,67 @@
-const API_URL = process.env.ACCTSHOP_API_URL || "https://www.acctshop.com/api/v2";
+// lib/acctshop.ts
 const API_KEY = process.env.ACCTSHOP_API_KEY!;
+const BASE_URL = "https://www.acctshop.com/api";
 
-async function get(endpoint: string) {
-  const res = await fetch(`${API_URL}/${endpoint}?api_key=${API_KEY}`, { cache: "no-store" });
+// Helper for GET requests
+async function get(endpoint: string, params?: Record<string, string>) {
+  const url = new URL(`${BASE_URL}/${endpoint}`);
+  url.searchParams.append("api_key", API_KEY);
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, value);
+    });
+  }
+  
+  const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) throw new Error(`Acctshop API error: ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  if (data.status !== "success") throw new Error(data.msg || "API request failed");
+  return data;
 }
 
-async function post(formData: Record<string, string>) {
-  const body = new URLSearchParams({ ...formData, api_key: API_KEY });
-  const res = await fetch(`${API_URL}/order`, { method: "POST", body });
-  if (!res.ok) throw new Error(`Acctshop order error: ${res.status}`);
-  return res.json();
+// Get categories and products (products.php returns both)
+export async function getCategoriesAndProducts() {
+  const data = await get("products.php");
+  return {
+    categories: data.categories,
+    products: data.categories.flatMap((cat: any) => cat.products || []),
+  };
 }
 
-export async function getCategories() {
-  return get("categories");
+// Get products by category
+export async function getProductsByCategory(categoryId: string) {
+  const data = await get("products.php");
+  const category = data.categories.find((cat: any) => cat.id === categoryId);
+  return category?.products || [];
 }
 
-export async function getProducts(categoryId?: string) {
-  const endpoint = categoryId ? `products?category_id=${categoryId}&api_key=${API_KEY}` : `products?api_key=${API_KEY}`;
-  const res = await fetch(`${API_URL}/${endpoint}`, { cache: "no-store" });
-  return res.json();
-}
-
+// Get product details
 export async function getProductDetail(productId: string) {
-  return get(`products/${productId}`);
+  const data = await get("product.php", { product: productId });
+  return data.product?.[0] || null;
 }
 
-export async function purchaseProduct(productId: string, quantity: number, coupon?: string) {
-  return post({
-    action: "buyProduct",
-    id: productId,
-    amount: String(quantity),
-    ...(coupon ? { coupon } : {}),
-  });
-}
-
+// Get account info (profile.php)
 export async function getAccountInfo() {
-  return get("account");
+  return get("profile.php");
 }
 
+// Get order details
 export async function getOrderDetail(orderId: string) {
-  return get(`orders/${orderId}`);
+  return get("order.php", { order: orderId });
+}
+
+// Purchase product (POST or GET - using GET as shown in docs)
+export async function purchaseProduct(productId: string, quantity: number, coupon?: string) {
+  const url = new URL(`${BASE_URL}/buy_product`);
+  url.searchParams.append("api_key", API_KEY);
+  url.searchParams.append("product", productId);
+  url.searchParams.append("amount", String(quantity));
+  if (coupon) url.searchParams.append("coupon", coupon);
+  
+  const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
+  if (!res.ok) throw new Error(`Purchase error: ${res.status}`);
+  const data = await res.json();
+  if (data.status !== "success") throw new Error(data.msg || "Purchase failed");
+  return data;
 }
