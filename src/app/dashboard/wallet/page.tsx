@@ -29,7 +29,8 @@ export default function WalletPage() {
   async function handleFund(e: React.FormEvent) {
     e.preventDefault();
     const amt = parseFloat(amount);
-    if (!amt || amt < 100) { toast.error("Minimum deposit is ₦100"); return; }
+    // Changed minimum from 100 to 5000
+    if (!amt || amt < 5000) { toast.error(`Minimum deposit is ${formatNGN(5000)}`); return; }
     setLoading(true);
     const res = await fetch("/api/wallet/fund", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: amt }) });
     const data = await res.json();
@@ -38,7 +39,8 @@ export default function WalletPage() {
     window.location.href = data.url;
   }
 
-  const presets = [500, 1000, 2000, 5000, 10000, 20000];
+  // Updated presets to have 5000 as the smallest option
+  const presets = [5000, 10000, 20000, 50000, 100000, 200000];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -70,8 +72,9 @@ export default function WalletPage() {
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1.5 block font-semibold uppercase tracking-wide">Or enter amount (₦)</label>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} min="100"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-mono focus:outline-none focus:border-green-500 transition-colors" placeholder="500" />
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} min="5000"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-mono focus:outline-none focus:border-green-500 transition-colors" placeholder="5000" />
+              <p className="text-xs text-gray-400 mt-1.5">Minimum deposit: {formatNGN(5000)}</p>
             </div>
             <button type="submit" disabled={loading}
               className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors">
