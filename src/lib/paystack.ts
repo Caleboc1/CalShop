@@ -1,11 +1,24 @@
 const SECRET = process.env.PAYSTACK_SECRET_KEY!;
 const BASE = "https://api.paystack.co";
 
-export async function initializeTransaction(email: string, amount: number, reference: string, callbackUrl: string) {
+export async function initializeTransaction(
+  email: string,
+  amount: number,
+  reference: string,
+  callbackUrl: string,
+  metadata?: Record<string, unknown>
+) {
   const res = await fetch(`${BASE}/transaction/initialize`, {
     method: "POST",
     headers: { Authorization: `Bearer ${SECRET}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, amount: Math.round(amount * 100), reference, callback_url: callbackUrl, currency: "NGN" }),
+    body: JSON.stringify({
+      email,
+      amount: Math.round(amount * 100),
+      reference,
+      callback_url: callbackUrl,
+      currency: "NGN",
+      metadata,
+    }),
   });
   return res.json();
 }

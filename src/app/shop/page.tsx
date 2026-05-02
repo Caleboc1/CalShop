@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { formatNGN } from "@/lib/utils";
 import { Search, ShoppingBag, Package, ChevronRight } from "lucide-react";
+import { DashboardMobileNav } from "@/components/dashboard/DashboardMobileNav";
 
 export default function ShopPage() {
+  const { data: session, status } = useSession();
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
@@ -33,19 +36,30 @@ export default function ShopPage() {
   const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "AcctMarket";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-24 lg:pb-0">
       {/* Nav */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:h-16 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-gray-900">
             <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
               <ShoppingBag className="w-3.5 h-3.5 text-white" />
             </div>
             {APP_NAME}
           </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900">Sign In</Link>
-            <Link href="/dashboard" className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors">Dashboard</Link>
+          <div className="flex flex-wrap items-center gap-3">
+            {status === "authenticated" ? (
+              <>
+                <span className="text-sm text-gray-500">Signed in as <span className="font-medium text-gray-900">{session.user?.name || session.user?.email}</span></span>
+                <Link href={(session.user as any)?.role === "ADMIN" ? "/admin" : "/dashboard"} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors">
+                  {(session.user as any)?.role === "ADMIN" ? "Admin Panel" : "Dashboard"}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900">Sign In</Link>
+                <Link href="/dashboard" className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors">Dashboard</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -57,12 +71,12 @@ export default function ShopPage() {
           <p className="text-gray-500 text-sm">{filtered.length} products available</p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
           {/* Sidebar categories */}
-          <aside className="w-full lg:w-56 flex-shrink-0">
+          <aside className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-24">
             <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Categories</h3>
-              <div className="flex flex-col gap-1">
+              <div className="flex max-h-72 flex-col gap-1 overflow-y-auto pr-1 lg:max-h-[calc(100vh-12rem)]">
                 <button onClick={() => setSelectedCat("all")}
                   className={`text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedCat === "all" ? "bg-green-50 text-green-700" : "text-gray-600 hover:bg-gray-50"}`}>
                   All Products <span className="text-gray-400 text-xs ml-1">({products.length})</span>
@@ -79,7 +93,7 @@ export default function ShopPage() {
           </aside>
 
           {/* Products */}
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className="relative mb-5">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..."
@@ -94,7 +108,7 @@ export default function ShopPage() {
                 <p>No products found</p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map((p: any) => (
                   <Link key={p.id} href={`/shop/${p.id}`}
                     className="bg-white border border-gray-200 hover:border-green-300 hover:shadow-md rounded-2xl p-5 transition-all group">
@@ -121,6 +135,7 @@ export default function ShopPage() {
           </div>
         </div>
       </div>
+      {status === "authenticated" && <DashboardMobileNav />}
     </div>
   );
 }

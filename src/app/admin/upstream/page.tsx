@@ -74,7 +74,7 @@ export default function UpstreamPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Total Products", value: products.length },
           { label: "USD → NGN Rate", value: `$1 = ₦${USD_TO_NGN.toLocaleString()}` },
@@ -102,51 +102,85 @@ export default function UpstreamPage() {
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center text-gray-400">No products found</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  {["ID", "Product Name", "Category", "Their Price (USD)", "Your Price (NGN)", "Profit/unit", "Stock"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-gray-400 text-xs font-medium uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p: any, i: number) => {
-                  // Convert from cents to dollars for display
-                  const theirPriceInCents = parseFloat(p.price || "1");
-                  const theirPriceInUSD = theirPriceInCents / 100;
-                  const yourPrice = Math.ceil(theirPriceInUSD * USD_TO_NGN * MARKUP);
-                  const profit = yourPrice - Math.ceil(theirPriceInUSD * USD_TO_NGN);
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    {["ID", "Product Name", "Category", "Their Price (USD)", "Your Price (NGN)", "Profit/unit", "Stock"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-gray-400 text-xs font-medium uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p: any, i: number) => {
+                    const theirPriceInUSD = parseFloat(p.price || "0");
+                    const yourPrice = Math.ceil(theirPriceInUSD * USD_TO_NGN * MARKUP);
+                    const profit = yourPrice - Math.ceil(theirPriceInUSD * USD_TO_NGN);
 
-                  return (
-                    <tr key={p.id || i} className="border-t border-gray-100 hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-400 font-mono text-xs">{p.id}</td>
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <div className="text-gray-900 font-medium text-xs leading-snug">{p.name || p.title}</div>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{p.category_name || p.category || "—"}</td>
-                      <td className="px-4 py-3 text-red-500 font-mono text-xs">
-                        ${theirPriceInUSD.toFixed(2)}  {/* Now shows $6.90 instead of $690 */}
-                      </td>
-                      <td className="px-4 py-3 text-green-600 font-mono text-xs font-bold">
-                        {formatNGN(yourPrice)}
-                      </td>
-                      <td className="px-4 py-3 text-violet-600 font-mono text-xs">
-                        {formatNGN(profit)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
-                        {p.amount || p.stock || p.quantity || "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
-              Showing {filtered.length} of {products.length} products
+                    return (
+                      <tr key={p.id || i} className="border-t border-gray-100 hover:bg-gray-50">
+                        <td className="px-4 py-3 text-gray-400 font-mono text-xs">{p.id}</td>
+                        <td className="px-4 py-3 max-w-[200px]">
+                          <div className="text-gray-900 font-medium text-xs leading-snug">{p.name || p.title}</div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">{p.category_name || p.category || "—"}</td>
+                        <td className="px-4 py-3 text-red-500 font-mono text-xs">
+                          ${theirPriceInUSD.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-green-600 font-mono text-xs font-bold">
+                          {formatNGN(yourPrice)}
+                        </td>
+                        <td className="px-4 py-3 text-violet-600 font-mono text-xs">
+                          {formatNGN(profit)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">
+                          {p.amount || p.stock || p.quantity || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
+                Showing {filtered.length} of {products.length} products
+              </div>
             </div>
-          </div>
+            <div className="divide-y divide-gray-100 md:hidden">
+              {filtered.map((p: any, i: number) => {
+                const theirPriceInUSD = parseFloat(p.price || "0");
+                const yourPrice = Math.ceil(theirPriceInUSD * USD_TO_NGN * MARKUP);
+                const profit = yourPrice - Math.ceil(theirPriceInUSD * USD_TO_NGN);
+                return (
+                  <div key={p.id || i} className="px-4 py-4">
+                    <div className="text-xs text-gray-400">#{p.id} · {p.category_name || p.category || "—"}</div>
+                    <div className="mt-1 font-medium text-gray-900 text-sm">{p.name || p.title}</div>
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <div className="text-gray-400">Their price</div>
+                        <div className="font-mono text-red-500">${theirPriceInUSD.toFixed(2)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-400">Your price</div>
+                        <div className="font-mono font-bold text-green-600">{formatNGN(yourPrice)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-400">Profit</div>
+                        <div className="font-mono text-violet-600">{formatNGN(profit)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-400">Stock</div>
+                        <div className="text-gray-600">{p.amount || p.stock || p.quantity || "—"}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
+                Showing {filtered.length} of {products.length} products
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

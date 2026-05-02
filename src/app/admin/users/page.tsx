@@ -20,7 +20,7 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-extrabold text-gray-900">Users ({users.length})</h1>
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>{["Name", "Email", "Balance", "Orders", "Role", "Joined"].map(h => (
@@ -42,6 +42,19 @@ export default async function AdminUsersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="divide-y divide-gray-100 md:hidden">
+          {users.map(u => (
+            <div key={u.id} className="px-4 py-4">
+              <div className="font-medium text-gray-900 text-sm">{u.name || "—"}</div>
+              <div className="mt-1 text-xs text-gray-400 break-all">{u.email}</div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-sm font-bold text-green-600 font-mono">{formatNGN(u.balance)}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${u.role === "ADMIN" ? "bg-violet-100 text-violet-700" : "bg-gray-100 text-gray-500"}`}>{u.role}</span>
+              </div>
+              <div className="mt-2 text-xs text-gray-400">{u._count.orders} orders · Joined {new Date(u.createdAt).toLocaleDateString()}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

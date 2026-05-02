@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
     if (tx.status === "COMPLETED") return NextResponse.json({ message: "Already credited", amount: tx.amount });
     const data = await verifyTransaction(reference);
     if (data.data?.status !== "success") return NextResponse.json({ error: "Payment not successful" }, { status: 400 });
+    if (data.data?.reference !== reference) return NextResponse.json({ error: "Reference mismatch" }, { status: 400 });
+    if (Number(data.data?.amount) !== Math.round(tx.amount * 100)) {
+      return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
+    }
     await prisma.$transaction([
       prisma.transaction.update({ where: { reference }, data: { status: "COMPLETED" } }),
       prisma.user.update({ where: { id: session.user.id }, data: { balance: { increment: tx.amount } } }),

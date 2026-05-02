@@ -37,7 +37,7 @@ export default function SettingsPage() {
               className="w-full border border-gray-100 bg-gray-50 rounded-xl px-4 py-3 text-gray-400 cursor-not-allowed" />
           </div>
           <button type="submit" disabled={saving}
-            className="px-6 py-2.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors">
+            className="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors">
             {saving ? "Saving..." : "Save Changes"}
           </button>
         </form>

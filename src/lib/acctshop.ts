@@ -51,12 +51,13 @@ export async function getOrderDetail(orderId: string) {
   return get("order.php", { order: orderId });
 }
 
-// Purchase product (POST or GET - using GET as shown in docs)
+// Purchase product using Acctshop's documented contract.
 export async function purchaseProduct(productId: string, quantity: number, coupon?: string) {
   const url = new URL(`${BASE_URL}/buy_product`);
-  url.searchParams.append("api_key", API_KEY);
-  url.searchParams.append("product", productId);
+  url.searchParams.append("action", "buyProduct");
+  url.searchParams.append("id", productId);
   url.searchParams.append("amount", String(quantity));
+  url.searchParams.append("api_key", API_KEY);
   if (coupon) url.searchParams.append("coupon", coupon);
   
   const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });

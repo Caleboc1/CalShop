@@ -37,14 +37,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-extrabold text-gray-900">Dashboard</h2>
         <Link href="/shop" className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors">
           <ShoppingBag className="w-4 h-4" /> Browse Shop
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((s) => (
           <Link key={s.label} href={s.href}
             className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-green-300 hover:shadow-sm transition-all group">
@@ -71,35 +71,50 @@ export default async function DashboardPage() {
             <Link href="/shop" className="mt-3 inline-block text-green-600 text-sm font-semibold">Browse products →</Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  {["Product", "Qty", "Total", "Status", "Date"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-gray-400 font-medium text-xs uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map((o: { id: string; product: { name: string; category?: { name: string } }; quantity: number; charge: number; status: string; createdAt: string }) => (
-                  <tr key={o.id} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900 text-sm truncate max-w-45">{o.product.name}</div>
-                      <div className="text-xs text-gray-400">{o.product.category?.name}</div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{o.quantity}</td>
-                    <td className="px-4 py-3 text-green-600 font-bold font-mono text-sm">{formatNGN(o.charge)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[o.status] || "text-gray-500 bg-gray-100"}`}>
-                        {o.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{new Date(o.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</td>
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {["Product", "Qty", "Total", "Status", "Date"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-gray-400 font-medium text-xs uppercase tracking-wide">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recentOrders.map((o: { id: string; product: { name: string; category?: { name: string } }; quantity: number; charge: number; status: string; createdAt: string }) => (
+                    <tr key={o.id} className="border-t border-gray-100 hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900 text-sm truncate max-w-45">{o.product.name}</div>
+                        <div className="text-xs text-gray-400">{o.product.category?.name}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 font-mono text-xs">{o.quantity}</td>
+                      <td className="px-4 py-3 text-green-600 font-bold font-mono text-sm">{formatNGN(o.charge)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[o.status] || "text-gray-500 bg-gray-100"}`}>
+                          {o.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{new Date(o.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="divide-y divide-gray-100 md:hidden">
+              {recentOrders.map((o: { id: string; product: { name: string; category?: { name: string } }; quantity: number; charge: number; status: string; createdAt: string }) => (
+                <div key={o.id} className="px-4 py-4">
+                  <div className="font-medium text-gray-900 text-sm">{o.product.name}</div>
+                  <div className="mt-1 text-xs text-gray-400">{o.product.category?.name}</div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="text-sm font-bold text-green-600 font-mono">{formatNGN(o.charge)}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[o.status] || "text-gray-500 bg-gray-100"}`}>{o.status}</span>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-400">Qty: {o.quantity} · {new Date(o.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

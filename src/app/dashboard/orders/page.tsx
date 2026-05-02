@@ -38,7 +38,7 @@ export default function OrdersPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-extrabold text-gray-900">My Orders <span className="text-gray-400 text-lg font-normal">({total})</span></h2>
         <button onClick={() => load(page)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 rounded-xl transition-all">
           <RefreshCw className="w-3.5 h-3.5" /> Refresh
@@ -57,12 +57,12 @@ export default function OrdersPage() {
           <div>
             {orders.map((o: any) => (
               <div key={o.id} className="border-b border-gray-100 last:border-0">
-                <div className="px-5 py-4 flex items-center justify-between gap-4">
+                <div className="px-4 py-4 sm:px-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-gray-900 text-sm truncate">{o.product?.name}</div>
                     <div className="text-xs text-gray-400 mt-0.5">{o.product?.category?.name} · Qty: {o.quantity} · {new Date(o.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
                     <span className="font-bold text-green-600 font-mono text-sm">{formatNGN(o.charge)}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[o.status] || "text-gray-500 bg-gray-100"}`}>{o.status}</span>
                     {o.credentials?.length > 0 && (
@@ -74,7 +74,7 @@ export default function OrdersPage() {
                   </div>
                 </div>
                 {expanded === o.id && o.credentials?.length > 0 && (
-                  <div className="px-5 pb-4">
+                  <div className="px-4 pb-4 sm:px-5">
                     <div className="bg-gray-900 rounded-xl p-4 relative">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs text-gray-400 font-mono uppercase tracking-wider">Account Credentials</span>

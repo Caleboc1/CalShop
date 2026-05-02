@@ -2,13 +2,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { formatNGN } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { ShoppingBag, Package, Shield, RefreshCw, ArrowLeft, Minus, Plus } from "lucide-react";
+import { DashboardMobileNav } from "@/components/dashboard/DashboardMobileNav";
 
 export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { status } = useSession();
   const [product, setProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [buying, setBuying] = useState(false);
@@ -18,6 +21,12 @@ export default function ProductPage() {
     fetch(`/api/products/${id}`).then(r => r.json()).then(setProduct);
     fetch("/api/user").then(r => r.json()).then(d => setBalance(d?.balance ?? null)).catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    if (product?.minOrder) {
+      setQuantity(product.minOrder);
+    }
+  }, [product]);
 
   async function handleBuy() {
     setBuying(true);
@@ -45,7 +54,7 @@ export default function ProductPage() {
   const canAfford = balance !== null && balance >= total;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-24 lg:pb-0">
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
           <Link href="/shop" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
@@ -55,7 +64,7 @@ export default function ProductPage() {
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-8">
           {/* Product info */}
           <div>
             <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-6">
@@ -81,7 +90,7 @@ export default function ProductPage() {
           </div>
 
           {/* Purchase card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit sticky top-24">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit lg:sticky lg:top-24">
             <div className="text-3xl font-extrabold text-green-600 mb-1">{formatNGN(product.price)}</div>
             <p className="text-sm text-gray-400 mb-5">per account</p>
 
@@ -97,16 +106,19 @@ export default function ProductPage() {
             <div className="mb-5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Quantity</label>
               <div className="flex items-center gap-3">
-                <button onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                <button onClick={() => setQuantity((q: number) => Math.max(product.minOrder || 1, q - 1))}
                   className="w-9 h-9 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors">
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <span className="text-lg font-bold w-8 text-center">{quantity}</span>
-                <button onClick={() => setQuantity(q => Math.min(product.stockCount, product.maxOrder || 100, q + 1))}
+                <button onClick={() => setQuantity((q: number) => Math.min(product.stockCount, product.maxOrder || 100, q + 1))}
                   className="w-9 h-9 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors">
                   <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
+              <p className="mt-2 text-xs text-gray-400">
+                Min {product.minOrder || 1} · Max {product.maxOrder || 100}
+              </p>
             </div>
 
             <div className="border-t border-gray-100 pt-4 mb-5 flex items-center justify-between">
@@ -134,6 +146,7 @@ export default function ProductPage() {
           </div>
         </div>
       </div>
+      {status === "authenticated" && <DashboardMobileNav />}
     </div>
   );
 }

@@ -13,8 +13,8 @@ export function DashboardTopbar({ user }: { user: any }) {
   }, []);
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white px-4 sm:px-6 flex items-center justify-between">
-      <h1 className="text-gray-500 text-sm font-medium hidden sm:block">
+    <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-6">
+      <h1 className="text-gray-500 text-sm font-medium">
         Welcome back, <span className="text-gray-900 font-semibold">{user?.name || user?.email}</span>
       </h1>
       <div className="flex items-center gap-3 ml-auto">

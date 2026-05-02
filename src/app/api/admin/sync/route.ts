@@ -33,13 +33,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Sync products with correct price calculation
+    // Sync products using Acctshop's native payload shape.
     for (const p of products) {
-      // Convert price from cents to dollars (API returns price in cents)
-      const upstreamPriceInCents = parseFloat(p.price || "0");
-      const upstreamPriceInUSD = upstreamPriceInCents / 100;
+      const upstreamPriceInUSD = parseFloat(p.price || "0");
+      const minOrder = Math.max(1, parseInt(p.min?.toString() || "1", 10));
+      const rawMaxOrder = parseInt(p.max?.toString() || "100", 10);
+      const stockCount = parseInt(p.amount?.toString() || "0", 10);
+      const maxOrder = Math.max(minOrder, Math.min(rawMaxOrder || 100, stockCount || rawMaxOrder || 100));
       
-      // Calculate your price in NGN
       const yourPriceInNGN = Math.ceil(upstreamPriceInUSD * USD_TO_NGN * MARKUP);
       
       const existing = await prisma.product.findFirst({ 
@@ -54,7 +55,9 @@ export async function POST(req: NextRequest) {
             description: p.description || "",
             price: yourPriceInNGN,
             upstreamPrice: upstreamPriceInUSD,
-            stockCount: parseInt(p.amount?.toString() || "0"),
+            stockCount,
+            minOrder,
+            maxOrder,
             isActive: p.amount > 0,
           },
         });
@@ -94,7 +97,9 @@ export async function POST(req: NextRequest) {
           price: yourPriceInNGN,
           upstreamId: String(p.id),
           upstreamPrice: upstreamPriceInUSD,
-          stockCount: parseInt(p.amount?.toString() || "0"),
+          stockCount,
+          minOrder,
+          maxOrder,
           isActive: p.amount > 0,
         },
       });

@@ -43,7 +43,7 @@ export default function WalletPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <h2 className="text-2xl font-extrabold text-gray-900">Wallet</h2>
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full blur-2xl" />
           <div className="relative">
@@ -59,7 +59,7 @@ export default function WalletPage() {
           <form onSubmit={handleFund} className="space-y-4">
             <div>
               <label className="text-xs text-gray-500 mb-2 block font-semibold uppercase tracking-wide">Quick amounts</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {presets.map(p => (
                   <button key={p} type="button" onClick={() => setAmount(String(p))}
                     className={`py-2 text-xs rounded-xl border font-semibold transition-colors ${amount === String(p) ? "border-green-500 bg-green-50 text-green-700" : "border-gray-200 text-gray-500 hover:border-gray-300"}`}>
@@ -87,12 +87,12 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {txns.map((t: any) => (
-              <div key={t.id} className="px-6 py-4 flex items-center justify-between">
+              <div key={t.id} className="px-4 py-4 sm:px-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-900 font-medium">{t.description || (t.type === "CREDIT" ? "Wallet top-up" : "Purchase")}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{new Date(t.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <span className={`font-mono font-bold ${t.type === "CREDIT" ? "text-green-600" : "text-red-500"}`}>
                     {t.type === "CREDIT" ? "+" : "-"}{formatNGN(t.amount)}
                   </span>

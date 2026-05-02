@@ -26,14 +26,14 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:h-16 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <ShoppingBag className="w-4 h-4 text-white" />
             </div>
             <span className="text-gray-900">{APP_NAME}</span>
           </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm text-gray-500">
             <Link href="/shop" className="hover:text-gray-900 transition-colors">Shop</Link>
             <Link href="/login" className="hover:text-gray-900 transition-colors">Sign In</Link>
             <Link href="/register" className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-colors text-sm">
@@ -44,7 +44,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 bg-gradient-to-br from-green-50 via-white to-emerald-50 relative overflow-hidden">
+      <section className="pt-40 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 bg-gradient-to-br from-green-50 via-white to-emerald-50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-green-100 rounded-full opacity-40 blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-emerald-100 rounded-full opacity-40 blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/4" />
         <div className="relative max-w-5xl mx-auto text-center">
@@ -52,12 +52,12 @@ export default function HomePage() {
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
             Nigeria&apos;s #1 Digital Accounts Marketplace
           </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-gray-900 leading-[1.05] mb-6">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-gray-900 leading-[1.05] mb-6">
             Buy Verified<br />
             <span className="text-gradient">Social Accounts</span><br />
             Instantly
           </h1>
-          <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-base sm:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
             Aged Facebook accounts, Instagram profiles, Gmail, TikTok and more.
             Pay in NGN, receive credentials instantly, replace if faulty.
           </p>
@@ -82,7 +82,7 @@ export default function HomePage() {
 
       {/* Stats */}
       <section className="py-12 border-y border-gray-100 bg-white">
-        <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
           {[
             { num: "50K+", label: "Orders Fulfilled" },
             { num: "12K+", label: "Happy Customers" },

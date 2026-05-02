@@ -27,18 +27,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 py-10 relative overflow-hidden">
       <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-green-100 rounded-full opacity-50 blur-2xl pointer-events-none" />
       <div className="absolute bottom-[-60px] right-[-60px] w-[220px] h-[220px] bg-emerald-100 rounded-full opacity-50 blur-2xl pointer-events-none" />
       <div className="relative w-full max-w-md z-10">
-        <div className="absolute -top-4 -right-2 bg-white border border-green-100 rounded-xl px-3 py-1.5 text-xs font-semibold text-green-700 flex items-center gap-2 shadow-sm">
+        <div className="absolute -top-4 right-2 sm:-right-2 bg-white border border-green-100 rounded-xl px-3 py-1.5 text-xs font-semibold text-green-700 flex items-center gap-2 shadow-sm">
           <span className="w-2 h-2 bg-green-400 rounded-full" /> Free to start
         </div>
         <div className="text-center mb-8">
           <p className="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">Get started</p>
           <h1 className="text-3xl font-extrabold text-gray-900">Create your account</h1>
         </div>
-        <div className="bg-white rounded-2xl p-8 border border-green-100 shadow-xl shadow-green-100/50">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-green-100 shadow-xl shadow-green-100/50">
           <div className="flex items-center justify-center gap-2 mb-6">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <ShoppingBag className="w-4 h-4 text-white" />

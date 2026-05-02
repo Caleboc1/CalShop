@@ -44,7 +44,7 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-extrabold text-gray-900">Products ({products.length})</h1>
         <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-xl">
           <Plus className="w-4 h-4" /> Add Product
@@ -91,7 +91,7 @@ export default function AdminProductsPage() {
       )}
 
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>{["Product", "Category", "Price", "Stock", "Upstream ID", "Active", ""].map(h => (
@@ -129,6 +129,30 @@ export default function AdminProductsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="divide-y divide-gray-100 md:hidden">
+          {loading ? (
+            <div className="px-4 py-10 text-center text-gray-400">Loading...</div>
+          ) : products.map((p: any) => (
+            <div key={p.id} className="px-4 py-4">
+              <div className="font-medium text-gray-900 text-sm">{p.name}</div>
+              <div className="mt-1 text-xs text-gray-400">{p.category?.name} · Upstream ID: {p.upstreamId || "—"}</div>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-sm font-bold text-green-600 font-mono">{formatNGN(p.price)}</span>
+                <button onClick={() => toggleActive(p.id, p.isActive)}
+                  className={`px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${p.isActive ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                  {p.isActive ? "Active" : "Hidden"}
+                </button>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+                <span>Stock: {p.stockCount}</span>
+                <button onClick={() => handleDelete(p.id)} className="text-red-400 hover:text-red-600 transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))
+          }
         </div>
       </div>
     </div>
