@@ -2,6 +2,10 @@
 const API_KEY = process.env.ACCTSHOP_API_KEY!;
 const BASE_URL = "https://www.acctshop.com/api";
 
+export function normalizePrice(raw: string | number): number {
+  return parseFloat(String(raw)) / 100;
+}
+
 // Helper for GET requests
 async function get(endpoint: string, params?: Record<string, string>) {
   const url = new URL(`${BASE_URL}/${endpoint}`);
@@ -22,9 +26,18 @@ async function get(endpoint: string, params?: Record<string, string>) {
 // Get categories and products (products.php returns both)
 export async function getCategoriesAndProducts() {
   const data = await get("products.php");
+  
+  const categories = data.categories.map((cat: any) => ({
+    ...cat,
+    products: (cat.products || []).map((p: any) => ({
+      ...p,
+      price: normalizePrice(p.price), // ← normalize here
+    })),
+  }));
+
   return {
-    categories: data.categories,
-    products: data.categories.flatMap((cat: any) => cat.products || []),
+    categories,
+    products: categories.flatMap((cat: any) => cat.products || []),
   };
 }
 
