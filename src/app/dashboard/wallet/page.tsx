@@ -4,7 +4,7 @@ import { formatNGN } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { Wallet, ArrowUpRight } from "lucide-react";
 
-const MIN_DEPOSIT = 2000;
+const MIN_DEPOSIT = 5000;
 
 export default function WalletPage() {
   const [balance, setBalance] = useState(0);
@@ -40,7 +40,7 @@ export default function WalletPage() {
     window.location.href = data.url;
   }
 
-  const presets = [2000, 5000, 10000, 20000, 50000, 100000];
+  const presets = [5000, 10000, 20000, 50000, 100000, 200000];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
