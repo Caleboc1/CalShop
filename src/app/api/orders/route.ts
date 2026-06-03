@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
 
     const product = await prisma.product.findUnique({ where: { id: productId, isActive: true } });
     if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
-    if (quantity < product.minOrder) {
-      return NextResponse.json({ error: `Minimum order is ${product.minOrder}` }, { status: 400 });
+    if (quantity < 1) {
+      return NextResponse.json({ error: "Minimum order is 1" }, { status: 400 });
     }
     if (quantity > product.maxOrder) {
       return NextResponse.json({ error: `Maximum order is ${product.maxOrder}` }, { status: 400 });

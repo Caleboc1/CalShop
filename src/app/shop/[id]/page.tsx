@@ -23,9 +23,7 @@ export default function ProductPage() {
   }, [id]);
 
   useEffect(() => {
-    if (product?.minOrder) {
-      setQuantity(product.minOrder);
-    }
+    if (product) setQuantity(1);
   }, [product]);
 
   async function handleBuy() {
@@ -106,7 +104,7 @@ export default function ProductPage() {
             <div className="mb-5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Quantity</label>
               <div className="flex items-center gap-3">
-                <button onClick={() => setQuantity((q: number) => Math.max(product.minOrder || 1, q - 1))}
+                <button onClick={() => setQuantity((q: number) => Math.max(1, q - 1))}
                   className="w-9 h-9 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors">
                   <Minus className="w-3.5 h-3.5" />
                 </button>
@@ -117,7 +115,7 @@ export default function ProductPage() {
                 </button>
               </div>
               <p className="mt-2 text-xs text-gray-400">
-                Min {product.minOrder || 1} · Max {product.maxOrder || 100}
+                Min 1 · Max {product.maxOrder || 100}
               </p>
             </div>
 
