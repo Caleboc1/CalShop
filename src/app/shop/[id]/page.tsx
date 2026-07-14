@@ -16,6 +16,7 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [buying, setBuying] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
+  const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestCredentials, setGuestCredentials] = useState<string[]>([]);
   const [verifyingGuestPayment, setVerifyingGuestPayment] = useState(false);
@@ -87,7 +88,7 @@ export default function ProductPage() {
       const res = await fetch("/api/checkout/guest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: id, quantity, email: guestEmail }),
+        body: JSON.stringify({ productId: id, quantity, email: guestEmail, name: guestName }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -220,15 +221,27 @@ export default function ProductPage() {
             )}
 
             {isGuest && (
-              <div className="mb-4">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Email</label>
-                <input
-                  type="email"
-                  value={guestEmail}
-                  onChange={e => setGuestEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-green-500 transition-colors"
-                />
+              <div className="mb-4 space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Name</label>
+                  <input
+                    type="text"
+                    value={guestName}
+                    onChange={e => setGuestName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-green-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Email</label>
+                  <input
+                    type="email"
+                    value={guestEmail}
+                    onChange={e => setGuestEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-green-500 transition-colors"
+                  />
+                </div>
                 <p className="text-xs text-gray-400 mt-1.5">No account required. Pay once and get credentials here after payment.</p>
               </div>
             )}

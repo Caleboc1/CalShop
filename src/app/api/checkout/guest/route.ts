@@ -9,8 +9,9 @@ function isValidEmail(email: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { productId, quantity = 1, email } = await req.json();
+    const { productId, quantity = 1, email, name } = await req.json();
     const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedName = String(name || "").trim();
     const qty = Number(quantity);
 
     if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
     if (product.stockCount < qty) return NextResponse.json({ error: "Insufficient stock" }, { status: 400 });
 
-    const user = await getOrCreateCustomerForEmail(normalizedEmail);
+    const user = await getOrCreateCustomerForEmail(normalizedEmail, normalizedName);
     const charge = product.price * qty;
     const reference = `GUEST-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
       productId,
       quantity: qty,
       customerEmail: normalizedEmail,
+      customerName: normalizedName || undefined,
     });
 
     if (!data.status) return NextResponse.json({ error: "Payment init failed" }, { status: 500 });

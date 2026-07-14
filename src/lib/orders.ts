@@ -4,10 +4,19 @@ import { purchaseProduct } from "@/lib/acctshop";
 
 const GUEST_USER_PASSWORD_PREFIX = "guest:";
 
-export async function getOrCreateCustomerForEmail(email: string) {
+export async function getOrCreateCustomerForEmail(email: string, name?: string) {
   const normalizedEmail = email.trim().toLowerCase();
+  const normalizedName = name?.trim();
   const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existing) return existing;
+  if (existing) {
+    if (normalizedName && (!existing.name || existing.name === "Guest Customer")) {
+      return prisma.user.update({
+        where: { id: existing.id },
+        data: { name: normalizedName },
+      });
+    }
+    return existing;
+  }
 
   const password = await bcrypt.hash(
     `${GUEST_USER_PASSWORD_PREFIX}${crypto.randomUUID()}`,
@@ -17,7 +26,7 @@ export async function getOrCreateCustomerForEmail(email: string) {
   return prisma.user.create({
     data: {
       email: normalizedEmail,
-      name: "Guest Customer",
+      name: normalizedName || "Guest Customer",
       password,
       referralCode: Math.random().toString(36).slice(2, 8).toUpperCase(),
     },

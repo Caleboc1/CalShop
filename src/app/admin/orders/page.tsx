@@ -3,7 +3,7 @@ import { formatNGN } from "@/lib/utils";
 
 type Order = {
   id: string;
-  user: { email: string };
+  user: { name: string | null; email: string };
   product: { name: string };
   quantity: number;
   charge: number;
@@ -15,7 +15,7 @@ type Order = {
 export default async function AdminOrdersPage() {
   const orders: Order[] = await prisma.order.findMany({
     take: 100, orderBy: { createdAt: "desc" },
-    include: { user: { select: { email: true } }, product: true },
+    include: { user: { select: { name: true, email: true } }, product: true },
   });
   const total = await prisma.order.count();
   return (
@@ -30,9 +30,14 @@ export default async function AdminOrdersPage() {
               ))}</tr>
             </thead>
             <tbody>
-              {orders.map(o => (
+              {orders.map(o => {
+                const customer = o.user.name && o.user.name !== "Guest Customer" ? o.user.name : o.user.email;
+                return (
                 <tr key={o.id} className="border-t border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-500 text-xs">{o.user.email}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    <div className="font-medium text-gray-700">{customer}</div>
+                    {customer !== o.user.email && <div className="mt-0.5 text-gray-400">{o.user.email}</div>}
+                  </td>
                   <td className="px-4 py-3 text-gray-900 font-medium text-xs max-w-[150px] truncate">{o.product.name}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{o.quantity}</td>
                   <td className="px-4 py-3 text-green-600 font-bold font-mono text-xs">{formatNGN(o.charge)}</td>
@@ -42,14 +47,19 @@ export default async function AdminOrdersPage() {
                   <td className="px-4 py-3 text-gray-400 text-xs">{o.credentials?.length || 0} delivered</td>
                   <td className="px-4 py-3 text-gray-400 text-xs">{new Date(o.createdAt).toLocaleDateString()}</td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
         <div className="divide-y divide-gray-100 md:hidden">
-          {orders.map(o => (
+          {orders.map(o => {
+            const customer = o.user.name && o.user.name !== "Guest Customer" ? o.user.name : o.user.email;
+            return (
             <div key={o.id} className="px-4 py-4">
-              <div className="text-xs text-gray-400">{o.user.email}</div>
+              <div className="text-xs text-gray-400">
+                {customer}
+                {customer !== o.user.email && <span className="block mt-0.5">{o.user.email}</span>}
+              </div>
               <div className="mt-1 font-medium text-gray-900 text-sm">{o.product.name}</div>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <span className="text-sm font-bold text-green-600 font-mono">{formatNGN(o.charge)}</span>
@@ -57,7 +67,7 @@ export default async function AdminOrdersPage() {
               </div>
               <div className="mt-2 text-xs text-gray-400">Qty: {o.quantity} · {o.credentials?.length || 0} delivered · {new Date(o.createdAt).toLocaleDateString()}</div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </div>
