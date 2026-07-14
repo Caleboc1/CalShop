@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { finalizeGuestOrderPayment } from "@/lib/orders";
 
 function isValidSignature(payload: string, signature: string | null) {
   if (!signature || !process.env.PAYSTACK_SECRET_KEY) return false;
@@ -46,6 +47,15 @@ export async function POST(req: NextRequest) {
         data: { status: "FAILED" },
       });
       return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
+    }
+
+    if (tx.method === "paystack_guest_order") {
+      await finalizeGuestOrderPayment({
+        reference,
+        paidAmount,
+        metadata: event.data?.metadata,
+      });
+      return NextResponse.json({ received: true, orderCompleted: true });
     }
 
     await prisma.$transaction([
