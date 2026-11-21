@@ -53,7 +53,9 @@ export async function POST(req: NextRequest) {
       where: { slug: { in: categorySlugs } },
       select: { id: true, slug: true },
     });
-    const categoryBySlug = new Map(existingCategories.map((category) => [category.slug, category.id]));
+    const categoryBySlug = new Map<string, string>(
+      existingCategories.map((category: { id: string; slug: string }) => [category.slug, category.id])
+    );
     const missingCategories = distinctCategories.filter((row) => !categoryBySlug.has(row.slug));
     for (const batch of chunks(missingCategories, BATCH_SIZE)) {
       await prisma.category.createMany({ data: batch });
@@ -62,7 +64,9 @@ export async function POST(req: NextRequest) {
       where: { slug: { in: categorySlugs } },
       select: { id: true, slug: true },
     });
-    for (const category of allCategories) categoryBySlug.set(category.slug, category.id);
+    for (const category of allCategories as Array<{ id: string; slug: string }>) {
+      categoryBySlug.set(category.slug, category.id);
+    }
 
     let uncategorizedId = categoryBySlug.get("uncategorized");
     if (!uncategorizedId) {
@@ -80,7 +84,9 @@ export async function POST(req: NextRequest) {
       where: { upstreamId: { in: upstreamIds } },
       select: { id: true, upstreamId: true },
     });
-    const existingByUpstreamId = new Map(existingProducts.map((product) => [product.upstreamId, product.id]));
+    const existingByUpstreamId = new Map<string | null, string>(
+      existingProducts.map((product: { id: string; upstreamId: string | null }) => [product.upstreamId, product.id])
+    );
     const createRows: Array<Record<string, unknown>> = [];
     const updateRows: Array<{ id: string; data: Record<string, unknown> }> = [];
 
