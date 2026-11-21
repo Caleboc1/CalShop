@@ -31,9 +31,17 @@ export default function UpstreamPage() {
 
   async function handleSync() {
     setSyncing(true); setSyncResult(null);
-    const res = await fetch("/api/admin/sync", { method: "POST" });
-    const data = await res.json();
-    setSyncResult(data); setSyncing(false);
+    try {
+      const res = await fetch("/api/admin/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) data.error = data.details ? `${data.error}: ${data.details}` : data.error || `Sync failed (${res.status})`;
+      setSyncResult(data);
+      if (res.ok) await load();
+    } catch (e: any) {
+      setSyncResult({ error: e.message || "Sync request failed" });
+    } finally {
+      setSyncing(false);
+    }
   }
 
   const filtered = products.filter((p: any) =>
@@ -64,7 +72,7 @@ export default function UpstreamPage() {
 
       {syncResult && (
         <div className={`p-4 rounded-xl border text-sm font-medium ${syncResult.error ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
-          {syncResult.error ? `❌ ${syncResult.error}` : `✓ Import complete — ${syncResult.created} imported, ${syncResult.skipped} already existed out of ${syncResult.total} total`}
+          {syncResult.error ? `❌ ${syncResult.error}` : `✓ Import complete — ${syncResult.created} imported, ${syncResult.updated || 0} updated, ${syncResult.skipped || 0} skipped out of ${syncResult.totalProducts || 0} total`}
         </div>
       )}
 

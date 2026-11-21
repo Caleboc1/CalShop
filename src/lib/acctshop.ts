@@ -1,6 +1,6 @@
 // lib/acctshop.ts
 const API_KEY = process.env.ACCTSHOP_API_KEY!;
-const BASE_URL = "https://www.acctshop.com/api";
+const BASE_URL = process.env.ACCTSHOP_API_URL || "https://acctshop.com/api";
 
 export function normalizePrice(raw: string | number): number {
   return parseFloat(String(raw)) / 100;
@@ -8,7 +8,8 @@ export function normalizePrice(raw: string | number): number {
 
 // Helper for GET requests
 async function get(endpoint: string, params?: Record<string, string>) {
-  const url = new URL(`${BASE_URL}/${endpoint}`);
+  if (!API_KEY) throw new Error("ACCTSHOP_API_KEY is not configured");
+  const url = new URL(endpoint, `${BASE_URL.replace(/\/$/, "")}/`);
   url.searchParams.append("api_key", API_KEY);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -16,9 +17,14 @@ async function get(endpoint: string, params?: Record<string, string>) {
     });
   }
   
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) throw new Error(`Acctshop API error: ${res.status}`);
-  const data = await res.json();
+  const res = await fetch(url.toString(), { cache: "no-store", signal: AbortSignal.timeout(55_000) });
+  if (!res.ok) throw new Error(`Acctshop API error: HTTP ${res.status} from ${url.pathname}`);
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Acctshop returned invalid JSON from ${url.pathname}`);
+  }
   if (data.status !== "success") throw new Error(data.msg || "API request failed");
   return data;
 }
@@ -66,7 +72,7 @@ export async function getOrderDetail(orderId: string) {
 
 // Purchase product using Acctshop's documented contract.
 export async function purchaseProduct(productId: string, quantity: number, coupon?: string) {
-  const url = new URL(`${BASE_URL}/buy_product`);
+  const url = new URL("buy_product", `${BASE_URL.replace(/\/$/, "")}/`);
   url.searchParams.append("action", "buyProduct");
   url.searchParams.append("id", productId);
   url.searchParams.append("amount", String(quantity));

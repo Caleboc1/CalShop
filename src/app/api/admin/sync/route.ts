@@ -7,6 +7,28 @@ import { getCategoriesAndProducts } from "@/lib/acctshop";
 
 const USD_TO_NGN = parseFloat(process.env.USD_TO_NGN || "1620");
 const MARKUP = parseFloat(process.env.MARKUP || "2.2");
+const BATCH_SIZE = 100;
+
+type SyncProduct = {
+  id: string | number;
+  name: string;
+  description?: string;
+  price?: string | number;
+  max?: string | number;
+  amount?: string | number;
+};
+
+function slugify(name: string) {
+  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || "uncategorized";
+}
+
+function chunks<T>(items: T[], size: number) {
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += size) result.push(items.slice(i, i + size));
+  return result;
+}
+
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -17,99 +39,88 @@ export async function POST(req: NextRequest) {
   try {
     const { categories: rawCategories, products: rawProducts } = await getCategoriesAndProducts();
     const categories = Array.isArray(rawCategories) ? rawCategories : [];
-    const products = Array.isArray(rawProducts) ? rawProducts : [];
+    const products = Array.isArray(rawProducts) ? rawProducts as SyncProduct[] : [];
 
-    let created = 0, updated = 0;
+    const categoryByProductId = new Map<string, string>();
+    const categoryRows = categories.map((cat: any) => {
+      const name = String(cat.name || cat.title || `Category ${cat.id}`);
+      for (const product of cat.products || []) categoryByProductId.set(String(product.id), name);
+      return { name, slug: slugify(name), sortOrder: parseInt(String(cat.id), 10) || 0 };
+    });
+    const distinctCategories = Array.from(new Map(categoryRows.map((row) => [row.slug, row])).values());
+    const categorySlugs = distinctCategories.map((row) => row.slug);
+    const existingCategories = await prisma.category.findMany({
+      where: { slug: { in: categorySlugs } },
+      select: { id: true, slug: true },
+    });
+    const categoryBySlug = new Map(existingCategories.map((category) => [category.slug, category.id]));
+    const missingCategories = distinctCategories.filter((row) => !categoryBySlug.has(row.slug));
+    for (const batch of chunks(missingCategories, BATCH_SIZE)) {
+      await prisma.category.createMany({ data: batch });
+    }
+    const allCategories = await prisma.category.findMany({
+      where: { slug: { in: categorySlugs } },
+      select: { id: true, slug: true },
+    });
+    for (const category of allCategories) categoryBySlug.set(category.slug, category.id);
 
-    // Sync categories
-    for (const cat of categories) {
-      const name = cat.name || cat.title || `Category ${cat.id}`;
-      const slug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      
-      await prisma.category.upsert({
-        where: { slug },
-        update: { name },
-        create: { name, slug, sortOrder: parseInt(cat.id) || 0 },
+    let uncategorizedId = categoryBySlug.get("uncategorized");
+    if (!uncategorizedId) {
+      const category = await prisma.category.upsert({
+        where: { slug: "uncategorized" },
+        update: {},
+        create: { name: "Uncategorized", slug: "uncategorized", sortOrder: 999 },
+        select: { id: true },
       });
+      uncategorizedId = category.id;
     }
 
-    // Sync products using Acctshop's native payload shape.
-    for (const p of products) {
-      const upstreamPriceInUSD = parseFloat(p.price || "0");
-      const minOrder = 1;
-      const rawMaxOrder = parseInt(p.max?.toString() || "100", 10);
-      const stockCount = parseInt(p.amount?.toString() || "0", 10);
-      const maxOrder = Math.max(minOrder, Math.min(rawMaxOrder || 100, stockCount || rawMaxOrder || 100));
-      
-      const yourPriceInNGN = Math.ceil(upstreamPriceInUSD * USD_TO_NGN * MARKUP);
-      
-      const existing = await prisma.product.findFirst({ 
-        where: { upstreamId: String(p.id) } 
-      });
-      
-      if (existing) {
-        await prisma.product.update({
-          where: { id: existing.id },
-          data: {
-            name: p.name,
-            description: p.description || "",
-            price: yourPriceInNGN,
-            upstreamPrice: upstreamPriceInUSD,
-            stockCount,
-            minOrder,
-            maxOrder,
-            isActive: p.amount > 0,
-          },
-        });
-        updated++;
-        continue;
-      }
+    const upstreamIds = products.filter((product) => product?.id != null).map((product) => String(product.id));
+    const existingProducts = await prisma.product.findMany({
+      where: { upstreamId: { in: upstreamIds } },
+      select: { id: true, upstreamId: true },
+    });
+    const existingByUpstreamId = new Map(existingProducts.map((product) => [product.upstreamId, product.id]));
+    const createRows: Array<Record<string, unknown>> = [];
+    const updateRows: Array<{ id: string; data: Record<string, unknown> }> = [];
 
-      // Find category for this product
-      let categoryId: string | undefined;
-      
-      for (const cat of categories) {
-        if (cat.products?.some((product: any) => String(product.id) === String(p.id))) {
-          const categorySlug = cat.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-          const category = await prisma.category.findFirst({ where: { slug: categorySlug } });
-          if (category) {
-            categoryId = category.id;
-            break;
-          }
-        }
-      }
+    for (const product of products) {
+      if (product?.id == null || !product.name) continue;
+      const upstreamPrice = Number(product.price);
+      if (!Number.isFinite(upstreamPrice)) continue;
+      const stockCount = Math.max(0, Math.trunc(Number(product.amount) || 0));
+      const providerMax = Math.max(1, Math.trunc(Number(product.max) || 100));
+      const maxOrder = Math.max(1, Math.min(providerMax, stockCount || providerMax));
+      const categoryName = categoryByProductId.get(String(product.id));
+      const categoryId = categoryName ? categoryBySlug.get(slugify(categoryName)) : uncategorizedId;
+      const data = {
+        categoryId: categoryId || uncategorizedId,
+        name: product.name,
+        description: product.description || "",
+        price: Math.ceil(upstreamPrice * USD_TO_NGN * MARKUP),
+        upstreamPrice,
+        stockCount,
+        minOrder: 1,
+        maxOrder,
+        isActive: stockCount > 0,
+      };
+      const existingId = existingByUpstreamId.get(String(product.id));
+      if (existingId) updateRows.push({ id: existingId, data });
+      else createRows.push({ ...data, upstreamId: String(product.id) });
+    }
 
-      if (!categoryId) {
-        let defaultCategory = await prisma.category.findFirst({ where: { slug: "uncategorized" } });
-        if (!defaultCategory) {
-          defaultCategory = await prisma.category.create({
-            data: { name: "Uncategorized", slug: "uncategorized", sortOrder: 999 },
-          });
-        }
-        categoryId = defaultCategory.id;
-      }
-      
-      await prisma.product.create({
-        data: {
-          categoryId: categoryId,
-          name: p.name,
-          description: p.description || "",
-          price: yourPriceInNGN,
-          upstreamId: String(p.id),
-          upstreamPrice: upstreamPriceInUSD,
-          stockCount,
-          minOrder,
-          maxOrder,
-          isActive: p.amount > 0,
-        },
-      });
-      created++;
+    for (const batch of chunks(createRows, BATCH_SIZE)) {
+      await prisma.product.createMany({ data: batch as any[] });
+    }
+    for (const batch of chunks(updateRows, BATCH_SIZE)) {
+      await Promise.all(batch.map(({ id, data }) => prisma.product.update({ where: { id }, data: data as any })));
     }
 
     return NextResponse.json({ 
       success: true,
-      created, 
-      updated,
+      created: createRows.length,
+      updated: updateRows.length,
+      skipped: products.length - createRows.length - updateRows.length,
       totalCategories: categories.length,
       totalProducts: products.length,
     });

@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getCategoriesAndProducts, getAccountInfo } from "@/lib/acctshop";
 
+export const maxDuration = 60;
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "ADMIN") {
@@ -12,7 +14,7 @@ export async function GET() {
 
   try {
     const [data, account] = await Promise.all([
-      getCategoriesAndProducts().catch(() => ({ categories: [], products: [] })),
+      getCategoriesAndProducts(),
       getAccountInfo().catch(() => null),
     ]);
 
@@ -24,7 +26,7 @@ export async function GET() {
   } catch (error) {
     console.error("Acctshop API error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch data from Acctshop" },
+      { error: "Failed to fetch data from Acctshop", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
