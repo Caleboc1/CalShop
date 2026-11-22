@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardList, Package, RefreshCw, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Package, RefreshCw, LogOut, Shield, Wallet } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ const links = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+  { href: "/admin/funding", label: "Funding", icon: Wallet },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/upstream", label: "Upstream", icon: RefreshCw },
 ];

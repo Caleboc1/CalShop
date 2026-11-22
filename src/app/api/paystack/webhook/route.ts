@@ -41,6 +41,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, alreadyCredited: true });
     }
 
+    if (tx.method === "manual_transfer") {
+      return NextResponse.json({ error: "Manual transfers must be reviewed by an admin" }, { status: 400 });
+    }
+
     if (paidAmount !== Math.round(tx.amount * 100)) {
       await prisma.transaction.update({
         where: { reference },

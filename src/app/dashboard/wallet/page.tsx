@@ -2,110 +2,138 @@
 import { useEffect, useState } from "react";
 import { formatNGN } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { Wallet, ArrowUpRight } from "lucide-react";
+import { Wallet, ArrowDownToLine, Copy, Check } from "lucide-react";
 
 const MIN_DEPOSIT = 5000;
+const ACCOUNT_NUMBER = "2003433441";
+const ACCOUNT_BANK = "Kuda Bank";
+const ACCOUNT_NAME = "Caleb Ogeneochuko";
+
+type Transaction = {
+  id: string;
+  amount: number;
+  type: string;
+  status: string;
+  description: string | null;
+  createdAt: string;
+};
 
 export default function WalletPage() {
   const [balance, setBalance] = useState(0);
   const [amount, setAmount] = useState("");
+  const [senderName, setSenderName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [txns, setTxns] = useState<any[]>([]);
+  const [txns, setTxns] = useState<Transaction[]>([]);
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/user").then(r => r.json()).then(d => setBalance(d?.balance ?? 0));
-    fetch("/api/wallet/transactions").then(r => r.json()).then(d => setTxns(d || [])).catch(() => {});
-
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref");
-    if (ref) {
-      fetch("/api/wallet/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reference: ref }) })
-        .then(r => r.json()).then(d => {
-          if (d.message) { toast.success(`Wallet credited ${d.amount ? formatNGN(d.amount) : ""}`); fetch("/api/user").then(r => r.json()).then(u => setBalance(u?.balance ?? 0)); }
-          else toast.error(d.error || "Verification failed");
-        });
-      window.history.replaceState({}, "", "/dashboard/wallet");
+  async function loadWallet() {
+    const [userRes, txnsRes] = await Promise.all([fetch("/api/user"), fetch("/api/wallet/transactions")]);
+    if (userRes.ok) {
+      const user = await userRes.json();
+      setBalance(user?.balance ?? 0);
     }
-  }, []);
+    if (txnsRes.ok) {
+      const transactions = await txnsRes.json();
+      setTxns(Array.isArray(transactions) ? transactions : []);
+    }
+  }
+
+  useEffect(() => { void loadWallet(); }, []);
+
+  async function copyAccountNumber() {
+    try {
+      await navigator.clipboard.writeText(ACCOUNT_NUMBER);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Could not copy account number");
+    }
+  }
 
   async function handleFund(e: React.FormEvent) {
     e.preventDefault();
-    const amt = parseFloat(amount);
-    if (!amt || amt < MIN_DEPOSIT) { toast.error(`Minimum deposit is ${formatNGN(MIN_DEPOSIT)}`); return; }
+    const parsedAmount = Number(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount < MIN_DEPOSIT) {
+      toast.error(`Minimum deposit is ${formatNGN(MIN_DEPOSIT)}`);
+      return;
+    }
+    if (!senderName.trim()) {
+      toast.error("Enter the name on the account you transferred from");
+      return;
+    }
+
     setLoading(true);
-    const res = await fetch("/api/wallet/fund", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: amt }) });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) { toast.error(data.error); return; }
-    window.location.href = data.url;
+    try {
+      const res = await fetch("/api/wallet/fund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: parsedAmount, senderName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not submit transfer");
+      toast.success("Transfer submitted. Your wallet will be credited after review.");
+      setAmount("");
+      setSenderName("");
+      await loadWallet();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not submit transfer");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const presets = [5000, 10000, 20000, 50000, 100000, 200000];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <h2 className="text-2xl font-extrabold text-gray-900">Wallet</h2>
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full blur-2xl" />
-          <div className="relative">
-            <div className="flex items-center gap-2 text-gray-400 text-sm mb-4"><Wallet className="w-4 h-4" /> Available Balance</div>
-            <div className="text-4xl font-extrabold text-gray-900 mb-1 font-mono">{formatNGN(balance)}</div>
-            <p className="text-gray-400 text-xs">Add funds below to make purchases</p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="rounded-xl border border-gray-200 bg-white p-6">
+          <div className="mb-4 flex items-center gap-2 text-sm text-gray-500"><Wallet className="h-4 w-4 text-green-600" /> Available Balance</div>
+          <div className="mb-1 font-mono text-4xl font-extrabold text-gray-900">{formatNGN(balance)}</div>
+          <p className="text-xs text-gray-500">Wallet balance available for purchases</p>
+        </section>
+
+        <section className="rounded-xl border border-gray-200 bg-white p-6">
+          <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-900"><ArrowDownToLine className="h-4 w-4 text-green-600" /> Fund Wallet</h3>
+          <div className="mb-5 border-y border-gray-100 py-4">
+            <p className="mb-3 text-xs font-semibold uppercase text-gray-500">Transfer to</p>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between gap-4"><dt className="text-gray-500">Bank</dt><dd className="font-semibold text-gray-900">{ACCOUNT_BANK}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-gray-500">Account name</dt><dd className="text-right font-semibold text-gray-900">{ACCOUNT_NAME}</dd></div>
+              <div className="flex items-center justify-between gap-4"><dt className="text-gray-500">Account number</dt><dd className="flex items-center gap-2 font-mono font-bold text-gray-900"><span>{ACCOUNT_NUMBER}</span><button type="button" onClick={copyAccountNumber} title="Copy account number" aria-label="Copy account number" className="p-1 text-gray-500 hover:text-green-700">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></dd></div>
+            </dl>
           </div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
-          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <ArrowUpRight className="w-4 h-4 text-green-600" /> Add Funds
-          </h3>
+
           <form onSubmit={handleFund} className="space-y-4">
             <div>
-              <label className="text-xs text-gray-500 mb-2 block font-semibold uppercase tracking-wide">Quick amounts</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {presets.map(p => (
-                  <button key={p} type="button" onClick={() => setAmount(String(p))}
-                    className={`py-2 text-xs rounded-xl border font-semibold transition-colors ${amount === String(p) ? "border-green-500 bg-green-50 text-green-700" : "border-gray-200 text-gray-500 hover:border-gray-300"}`}>
-                    {formatNGN(p)}
-                  </button>
-                ))}
+              <label className="mb-2 block text-xs font-semibold uppercase text-gray-500">Transfer amount</label>
+              <div className="grid grid-cols-3 gap-2">
+                {presets.map(value => <button key={value} type="button" onClick={() => setAmount(String(value))} className={`rounded-lg border py-2 text-xs font-semibold ${amount === String(value) ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600 hover:border-gray-400"}`}>{formatNGN(value)}</button>)}
               </div>
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} min={MIN_DEPOSIT} step="0.01" required className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2.5 font-mono text-gray-900 focus:border-green-500 focus:outline-none" placeholder={`Minimum ${MIN_DEPOSIT}`} />
+              <p className="mt-1 text-xs text-gray-500">Minimum deposit: {formatNGN(MIN_DEPOSIT)}</p>
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1.5 block font-semibold uppercase tracking-wide">Or enter amount (₦)</label>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} min={MIN_DEPOSIT}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-mono focus:outline-none focus:border-green-500 transition-colors" placeholder={String(MIN_DEPOSIT)} />
-              <p className="text-xs text-gray-400 mt-1.5">Minimum deposit: {formatNGN(MIN_DEPOSIT)}</p>
+              <label htmlFor="senderName" className="mb-1.5 block text-xs font-semibold uppercase text-gray-500">Name on sender account</label>
+              <input id="senderName" value={senderName} onChange={e => setSenderName(e.target.value)} required maxLength={120} className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-gray-900 focus:border-green-500 focus:outline-none" placeholder="Account holder name" />
             </div>
-            <button type="submit" disabled={loading}
-              className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors">
-              {loading ? "Redirecting..." : "Pay with Paystack"}
+            <button type="submit" disabled={loading || !amount || !senderName.trim()} className="w-full rounded-lg bg-green-700 py-3 font-bold text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50">
+              {loading ? "Submitting..." : "I've sent it"}
             </button>
           </form>
-        </div>
+        </section>
       </div>
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100"><h3 className="font-bold text-gray-900">Transaction History</h3></div>
-        {txns.length === 0 ? (
-          <div className="py-12 text-center text-gray-400 text-sm">No transactions yet</div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {txns.map((t: any) => (
-              <div key={t.id} className="px-4 py-4 sm:px-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-900 font-medium">{t.description || (t.type === "CREDIT" ? "Wallet top-up" : "Purchase")}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{new Date(t.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                </div>
-                <div className="text-left sm:text-right">
-                  <span className={`font-mono font-bold ${t.type === "CREDIT" ? "text-green-600" : "text-red-500"}`}>
-                    {t.type === "CREDIT" ? "+" : "-"}{formatNGN(t.amount)}
-                  </span>
-                  <p className={`text-xs mt-0.5 ${t.status === "COMPLETED" ? "text-gray-400" : "text-yellow-500"}`}>{t.status}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="border-b border-gray-100 px-6 py-4"><h3 className="font-bold text-gray-900">Transaction History</h3></div>
+        {txns.length === 0 ? <div className="py-12 text-center text-sm text-gray-500">No transactions yet</div> : <div className="divide-y divide-gray-100">
+          {txns.map(transaction => <div key={transaction.id} className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div><p className="text-sm font-medium text-gray-900">{transaction.description || (transaction.type === "CREDIT" ? "Wallet top-up" : "Purchase")}</p><p className="mt-0.5 text-xs text-gray-500">{new Date(transaction.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p></div>
+            <div className="text-left sm:text-right"><span className={`font-mono font-bold ${transaction.type === "CREDIT" ? "text-green-700" : "text-red-600"}`}>{transaction.type === "CREDIT" ? "+" : "-"}{formatNGN(transaction.amount)}</span><p className={`mt-0.5 text-xs ${transaction.status === "COMPLETED" ? "text-green-700" : transaction.status === "PENDING" ? "text-amber-700" : "text-gray-500"}`}>{transaction.status === "FAILED" ? "DECLINED" : transaction.status}</p></div>
+          </div>)}
+        </div>}
+      </section>
     </div>
   );
 }
