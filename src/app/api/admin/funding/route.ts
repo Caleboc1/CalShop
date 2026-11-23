@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Invalid funding action" }, { status: 400 });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const funding = await tx.transaction.findUnique({ where: { id: transactionId } });
       if (!funding || funding.method !== "manual_transfer" || funding.type !== "CREDIT") {
         return { error: "Funding request not found", status: 404 };
