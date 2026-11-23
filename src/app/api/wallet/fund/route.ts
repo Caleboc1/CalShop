@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyAdminOfFunding } from "@/lib/mailer";
 
 const MIN_DEPOSIT = 5000;
 
@@ -31,7 +32,16 @@ export async function POST(req: NextRequest) {
         status: "PENDING",
         description: `Manual wallet funding; sender: ${senderName}`,
       },
-      select: { id: true, amount: true, status: true, createdAt: true },
+      select: { id: true, amount: true, status: true, createdAt: true, reference: true },
+    });
+
+    await notifyAdminOfFunding({
+      amount: transaction.amount,
+      senderName,
+      customerName: session.user.name || null,
+      customerEmail: session.user.email || "",
+      reference: transaction.reference || transaction.id,
+      createdAt: transaction.createdAt,
     });
 
     return NextResponse.json({ message: "Transfer submitted for review", transaction }, { status: 201 });

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { notifyCustomerOfFundingDecision } from "@/lib/mailer";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -31,7 +32,10 @@ export async function PATCH(req: NextRequest) {
     }
 
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const funding = await tx.transaction.findUnique({ where: { id: transactionId } });
+      const funding = await tx.transaction.findUnique({
+        where: { id: transactionId },
+        include: { user: { select: { email: true, name: true } } },
+      });
       if (!funding || funding.method !== "manual_transfer" || funding.type !== "CREDIT") {
         return { error: "Funding request not found", status: 404 };
       }
@@ -48,10 +52,23 @@ export async function PATCH(req: NextRequest) {
       if (action === "approve") {
         await tx.user.update({ where: { id: funding.userId }, data: { balance: { increment: funding.amount } } });
       }
-      return { success: true };
+      return {
+        success: true,
+        email: funding.user.email,
+        name: funding.user.name,
+        amount: funding.amount,
+        reference: funding.reference,
+      };
     });
 
     if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+    await notifyCustomerOfFundingDecision({
+      email: result.email,
+      name: result.name,
+      amount: result.amount,
+      reference: result.reference,
+      decision: action === "approve" ? "approved" : "declined",
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Manual funding review failed:", error);
