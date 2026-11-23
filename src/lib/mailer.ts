@@ -12,7 +12,18 @@ function createTransport() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
-  if (!host || !user || !pass || !Number.isFinite(port)) return null;
+  const missing = [
+    !host && "SMTP_HOST",
+    !user && "SMTP_USER",
+    !pass && "SMTP_PASS",
+  ].filter(Boolean);
+  if (missing.length || !Number.isInteger(port) || port < 1 || port > 65535) {
+    console.warn("Email notification skipped: invalid SMTP configuration", {
+      missing,
+      invalidPort: !Number.isInteger(port) || port < 1 || port > 65535,
+    });
+    return null;
+  }
 
   return nodemailer.createTransport({
     host,
@@ -26,7 +37,7 @@ async function sendMail(message: MailMessage) {
   const from = process.env.SMTP_FROM;
   const transport = createTransport();
   if (!from || !transport) {
-    console.warn("Email notification skipped: SMTP settings or SMTP_FROM are incomplete");
+    if (!from) console.warn("Email notification skipped: SMTP_FROM is not configured");
     return;
   }
 
@@ -35,8 +46,16 @@ async function sendMail(message: MailMessage) {
       from: `${process.env.SMTP_FROM_NAME || "AcctMarket"} <${from}>`,
       ...message,
     });
-  } catch {
-    console.error("Email notification could not be delivered");
+  } catch (error) {
+    const details = error && typeof error === "object"
+      ? error as { code?: unknown; responseCode?: unknown; command?: unknown; message?: unknown }
+      : null;
+    console.error("Email notification could not be delivered", {
+      code: typeof details?.code === "string" ? details.code : undefined,
+      responseCode: typeof details?.responseCode === "number" ? details.responseCode : undefined,
+      command: typeof details?.command === "string" ? details.command : undefined,
+      message: typeof details?.message === "string" ? details.message.slice(0, 300) : "Unknown SMTP error",
+    });
   }
 }
 
