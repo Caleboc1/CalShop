@@ -12,7 +12,8 @@ const globalForPrisma = globalThis as unknown as {
 
 // Create PostgreSQL connection pool
 const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL 
+  connectionString: process.env.DATABASE_URL,
+  max: 1,
 });
 const adapter = new PrismaPg(pool);
 
