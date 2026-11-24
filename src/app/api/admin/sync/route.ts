@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     const { categories: rawCategories, products: rawProducts } = await getCategoriesAndProducts();
     const categories = Array.isArray(rawCategories) ? rawCategories : [];
     const products = Array.isArray(rawProducts) ? rawProducts as SyncProduct[] : [];
+    let completeSnapshot = categories.length > 0 || products.length > 0;
 
     const categoryByProductId = new Map<string, string>();
     const categoryRows = categories.map((cat: any) => {
@@ -89,11 +90,19 @@ export async function POST(req: NextRequest) {
     );
     const createRows: Array<Record<string, unknown>> = [];
     const updateRows: Array<{ id: string; data: Record<string, unknown> }> = [];
+    const importedUpstreamIds = new Set<string>();
 
     for (const product of products) {
-      if (product?.id == null || !product.name) continue;
+      if (product?.id == null || !product.name) {
+        completeSnapshot = false;
+        continue;
+      }
       const upstreamPrice = Number(product.price);
-      if (!Number.isFinite(upstreamPrice)) continue;
+      if (!Number.isFinite(upstreamPrice)) {
+        completeSnapshot = false;
+        continue;
+      }
+      importedUpstreamIds.add(String(product.id));
       const stockCount = Math.max(0, Math.trunc(Number(product.amount) || 0));
       const providerMax = Math.max(1, Math.trunc(Number(product.max) || 100));
       const maxOrder = Math.max(1, Math.min(providerMax, stockCount || providerMax));
@@ -122,10 +131,26 @@ export async function POST(req: NextRequest) {
       await Promise.all(batch.map(({ id, data }) => prisma.product.update({ where: { id }, data: data as any })));
     }
 
+    let deactivated = 0;
+    if (completeSnapshot) {
+      const importedIds = Array.from(importedUpstreamIds);
+      const staleProducts = await prisma.product.updateMany({
+        where: {
+          upstreamId: importedIds.length > 0
+            ? { not: null, notIn: importedIds }
+            : { not: null },
+          OR: [{ isActive: true }, { stockCount: { gt: 0 } }],
+        },
+        data: { isActive: false, stockCount: 0 },
+      });
+      deactivated = staleProducts.count;
+    }
+
     return NextResponse.json({ 
       success: true,
       created: createRows.length,
       updated: updateRows.length,
+      deactivated,
       skipped: products.length - createRows.length - updateRows.length,
       totalCategories: categories.length,
       totalProducts: products.length,

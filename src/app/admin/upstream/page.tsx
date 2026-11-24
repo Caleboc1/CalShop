@@ -72,7 +72,7 @@ export default function UpstreamPage() {
 
       {syncResult && (
         <div className={`p-4 rounded-xl border text-sm font-medium ${syncResult.error ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
-          {syncResult.error ? `❌ ${syncResult.error}` : `✓ Import complete — ${syncResult.created} imported, ${syncResult.updated || 0} updated, ${syncResult.skipped || 0} skipped out of ${syncResult.totalProducts || 0} total`}
+          {syncResult.error ? `❌ ${syncResult.error}` : `✓ Import complete — ${syncResult.created} imported, ${syncResult.updated || 0} updated, ${syncResult.deactivated || 0} unavailable hidden, ${syncResult.skipped || 0} skipped out of ${syncResult.totalProducts || 0} total`}
         </div>
       )}
 
